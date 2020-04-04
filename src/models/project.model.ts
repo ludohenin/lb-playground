@@ -18,14 +18,10 @@ export class Project extends Entity {
   })
   name: string;
 
-  @belongsTo(
-    () => User,
-    {keyTo: 'id', keyFrom: 'userId', name: 'user'},
-    {
-      type: 'string',
-      required: true,
-    },
-  )
+  @belongsTo(() => User, undefined, {
+    type: 'string',
+    required: true,
+  })
   userId: string;
 
   @belongsTo(
