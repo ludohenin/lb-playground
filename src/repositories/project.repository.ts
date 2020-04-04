@@ -4,6 +4,7 @@ import {
   DefaultCrudRepository,
   repository,
 } from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
 import {MariaDataSource} from '../datasources';
 import {Category, Project, ProjectsRelations, User} from '../models';
 import {CategoryRepository} from './category.repository';
@@ -20,9 +21,9 @@ export class ProjectRepository extends DefaultCrudRepository<
   constructor(
     @inject('datasources.maria') dataSource: MariaDataSource,
     @repository.getter('CategoryRepository')
-    categoryRepoGetter: Getter<CategoryRepository>,
+    private categoryRepoGetter: Getter<CategoryRepository>,
     @repository.getter('UserRepository')
-    userRepoGetter: Getter<UserRepository>,
+    private userRepoGetter: Getter<UserRepository>,
   ) {
     super(Project, dataSource);
 
@@ -35,5 +36,34 @@ export class ProjectRepository extends DefaultCrudRepository<
 
     this.registerInclusionResolver('category', this.category.inclusionResolver);
     this.registerInclusionResolver('user', this.user.inclusionResolver);
+  }
+
+  async create(project: Partial<Project>): Promise<Project> {
+    await this.integrityCheck(project);
+    return super.create(project);
+  }
+
+  private async integrityCheck(project: Partial<Project>): Promise<void> {
+    // https://github.com/strongloop/loopback-next/issues/1718
+
+    try {
+      const userRepo = await this.userRepoGetter();
+      await userRepo.findById(project.userId);
+    } catch (err) {
+      if (err.statusCode === 404)
+        throw new HttpErrors.UnprocessableEntity(
+          'Provided user id does not exist',
+        );
+      else throw err;
+    }
+
+    const categoryRepo = await this.categoryRepoGetter();
+    const category = await categoryRepo.findOne({
+      where: {name: project.categoryName},
+    });
+    if (!category)
+      throw new HttpErrors.UnprocessableEntity(
+        'Provided category name does not exist',
+      );
   }
 }
