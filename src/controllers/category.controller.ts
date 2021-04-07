@@ -4,7 +4,7 @@ import {
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
   del,
@@ -14,7 +14,7 @@ import {
   patch,
   post,
   put,
-  requestBody,
+  requestBody
 } from '@loopback/rest';
 import {Category, Project} from '../models';
 import {CategoryRepository} from '../repositories';
@@ -138,8 +138,8 @@ export class CategoryController {
   })
   async findProjectsByCategoryId(
     @param.path.string('id') id: string,
-    @param.filter(Category, {exclude: 'where'})
-    filter?: FilterExcludingWhere<Category>,
+    @param.filter(Project, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Project>,
   ): Promise<Project[]> {
     return this.categoryRepository.projects(id).find(filter);
   }
